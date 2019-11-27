@@ -1,0 +1,31 @@
+---
+# Because restraint needs a key (Ansible uses a password)
+- name: Generate /root/.ssh/id_rsa
+  delegate_to: localhost
+  command: ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -C "" -N ""
+  args:
+    creates: /root/.ssh/id_rsa
+- name: Copy /root/.ssh/id_rsa to SUT  # noqa 301
+  delegate_to: localhost
+  command: |
+    /usr/bin/sshpass -p beaker ssh-copy-id -o StrictHostKeyChecking=no \
+                     -o UserKnownHostsFile=/dev/null root@{{ fqdn }}
+- name: Process CKI jobs  # noqa 301
+  delegate_to: localhost
+  shell: |
+    xsltproc --stringparam jumpHost {{ local_repo_ip }} \
+             files/job2restraint.xsl cki_job.xml > processed_cki_job.xml
+
+- name: Generate CKI playbook  # noqa 301
+  delegate_to: localhost
+  shell: |
+    xsltproc --stringparam sutHost {{ fqdn }} files/job2dciplaybook.xsl \
+             /etc/dci-rhel-agent/hooks/cki_job.xml > cki_playbook.yml
+
+- include_tasks: cki_playbook.yml
+
+# Run the test
+- name: Execute restraint processed_cki_job.xml  # noqa 301
+  delegate_to: localhost
+  command: |
+    restraint --job processed_cki_job.xml --host 1=root@{{ fqdn }} -v
