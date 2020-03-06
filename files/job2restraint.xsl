@@ -4,7 +4,10 @@
     <xsl:output method="xml" indent="yes"/>
     <!-- <xsl:strip-space elements="*"/> -->
     <xsl:template match="text()"/>
-    <xsl:template match="job/recipeSet/recipe[1]"><job><recipeSet><recipe>
+    <xsl:template match="job/recipeSet/recipe[1]"><job><recipeSet><recipe><params><param>
+<xsl:attribute name="name">LOOKASIDE</xsl:attribute>
+<xsl:attribute name="value">http://<xsl:value-of select="$jumpHost"/>/lookaside/</xsl:attribute>
+</param></params>
 <xsl:apply-templates/></recipe></recipeSet></job>
 </xsl:template>
 <xsl:template match="task[fetch]">

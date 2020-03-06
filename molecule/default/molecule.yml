@@ -4,8 +4,8 @@ dependency:
   enabled: false
 driver:
   name: docker
-lint:
-  name: yamllint
+lint: |
+  yamllint tasks
 platforms:
   - name: el7
     image: centos:latest
@@ -25,7 +25,6 @@ scenario:
     - lint
     - destroy
     - dependency
-    - syntax
     - create
     - prepare
     - destroy
