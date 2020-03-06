@@ -13,6 +13,7 @@ platforms:
     capabilities:
       - SYS_ADMIN
 provisioner:
+  log: true
   name: ansible
   connection_options:
     ansible_user: centos

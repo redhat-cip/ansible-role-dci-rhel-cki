@@ -1,49 +1,31 @@
 ---
-# We should update the container image instead of installing stuff in it
-- name: Install git
-  delegate_to: localhost
-  yum:
-    name: git
-    state: present
-
-# We should update the container image instead of installing stuff in it
-- name: Add harness repository
-  delegate_to: localhost
-  yum_repository:
-    name: harness
-    description: harness
-    baseurl: https://beaker-project.org/yum/harness/CentOS7/
-    gpgcheck: no
-- name: Install restraint-client
-  delegate_to: localhost
-  yum:
-    name: restraint-client
-    state: present
-
 # Because restraint needs a key (Ansible uses a password)
 - name: Generate /root/.ssh/id_rsa
   delegate_to: localhost
-  shell: ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -C "" -N ""
+  command: ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -C "" -N ""
   args:
     creates: /root/.ssh/id_rsa
-- name: Copy /root/.ssh/id_rsa to SUT
+- name: Copy /root/.ssh/id_rsa to SUT  # noqa 301
+  delegate_to: localhost
+  command: |
+    /usr/bin/sshpass -p beaker ssh-copy-id -o StrictHostKeyChecking=no \
+                     -o UserKnownHostsFile=/dev/null root@{{ fqdn }}
+- name: Process CKI jobs  # noqa 301
   delegate_to: localhost
   shell: |
-    /usr/bin/sshpass -p beaker ssh-copy-id -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@{{ fqdn }}
-- name: Process CKI jobs
-  delegate_to: localhost
-  shell: |
-    xsltproc --stringparam jumpHost {{ local_repo_ip }} files/job2restraint.xsl cki_job.xml > processed_cki_job.xml
+    xsltproc --stringparam jumpHost {{ local_repo_ip }} \
+             files/job2restraint.xsl cki_job.xml > processed_cki_job.xml
 
-- name: Generate CKI playbook
+- name: Generate CKI playbook  # noqa 301
   delegate_to: localhost
   shell: |
-    xsltproc --stringparam sutHost {{ fqdn }} files/job2dciplaybook.xsl /etc/dci-rhel-agent/hooks/cki_job.xml > cki_playbook.yml
+    xsltproc --stringparam sutHost {{ fqdn }} files/job2dciplaybook.xsl \
+             /etc/dci-rhel-agent/hooks/cki_job.xml > cki_playbook.yml
 
 - include_tasks: cki_playbook.yml
 
 # Run the test
-- name: Execute restraint processed_cki_job.xml
+- name: Execute restraint processed_cki_job.xml  # noqa 301
   delegate_to: localhost
-  shell: |
+  command: |
     restraint --job processed_cki_job.xml --host 1=root@{{ fqdn }} -v

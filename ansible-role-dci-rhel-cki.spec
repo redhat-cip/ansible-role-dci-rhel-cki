@@ -12,7 +12,7 @@ Source0:    ansible-role-dci-rhel-cki-%{version}.tar.gz
 BuildArch:  noarch
 
 %description
-An Ansible role that use automated cki test
+An Ansible role that is used to automate cki testing
 
 %prep
 %setup -qc
