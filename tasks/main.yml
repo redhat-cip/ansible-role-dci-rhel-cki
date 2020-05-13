@@ -20,7 +20,8 @@
 - name: Mirror cki job local
   delegate_to: localhost
   get_url:
-    url: "{{ cki_job_url | default(job_info.job.topic.data.cki_job_url) }}"
+    url: "{{ cki_job_url |
+      default(hostvars.localhost.job_info.job.topic.data.cki_job_url) }}"
     dest: "{{ rstrnt_job.path }}/cki_job.xml"
     mode: 0755
 
@@ -35,7 +36,7 @@
 - name: Create lookaside dir
   delegate_to: localhost
   file:
-    path: /var/www/html/lookaside
+    path: "{{ local_repo }}/lookaside"
     state: directory
     mode: '0755'
 
@@ -43,7 +44,7 @@
   delegate_to: localhost
   get_url:
     url: "{{ item.dependency.url }}"
-    dest: /var/www/html/lookaside/
+    dest: "{{ local_repo }}/lookaside/"
     mode: 0755
   with_items: "{{ dependencies.matches }}"
 
@@ -70,7 +71,8 @@
   delegate_to: localhost
   command: |
     restraint --job {{ rstrnt_job.path }}/processed_cki_job.xml --host
-              1=root@{{ fqdn }} -v
+              1=root@{{ fqdn }} -v -e 'ssh -o UserKnownHostsFile=/dev/null
+              -o StrictHostKeyChecking=no'
   args:
     chdir: "{{ rstrnt_job.path }}"
 

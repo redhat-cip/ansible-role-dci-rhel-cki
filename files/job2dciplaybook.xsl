@@ -41,7 +41,7 @@
     </xsl:variable>- name: Create task directory if it does not exist
   delegate_to: localhost
   file:
-    path: /var/www/html/tasks/<xsl:value-of select="$dirname"/>
+    path: "{{ local_repo }}/tasks/<xsl:value-of select="$dirname"/>"
     state: directory
     mode: '0755'
 <xsl:choose>
@@ -57,14 +57,14 @@
   delegate_to: localhost
   archive:
     path: ./git_repos/<xsl:value-of select="$repo_base_path"/>/
-    dest: /var/www/html/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/>.tgz
+    dest: "{{ local_repo }}/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/>.tgz"
 
 </xsl:when>
         <xsl:otherwise>- name: Download Task
   delegate_to: localhost
   get_url:
     url: <xsl:value-of select="$repo_uri"/>
-    dest: /var/www/html/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/>
+    dest: "{{ local_repo }}/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/>"
     mode: 0755
 
 </xsl:otherwise>
