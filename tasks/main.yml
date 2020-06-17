@@ -69,7 +69,7 @@
 # Run the test
 - name: Execute restraint processed_cki_job.xml  # noqa 301
   delegate_to: localhost
-  command: |
+  command:
     restraint --job {{ rstrnt_job.path }}/processed_cki_job.xml --host
               1=root@{{ fqdn }} -v -e 'ssh -o UserKnownHostsFile=/dev/null
               -o StrictHostKeyChecking=no'
