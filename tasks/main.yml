@@ -34,14 +34,14 @@
   register: dependencies
 
 - name: Create lookaside dir
-  delegate_to: localhost
+  delegate_to: beaker_server
   file:
     path: "{{ local_repo }}/lookaside"
     state: directory
     mode: '0755'
 
 - name: Mirror Job Dependencies
-  delegate_to: localhost
+  delegate_to: beaker_server
   get_url:
     url: "{{ item.dependency.url }}"
     dest: "{{ local_repo }}/lookaside/"
