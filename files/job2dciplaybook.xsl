@@ -39,14 +39,14 @@
             <xsl:with-param name="value" select="$repo_base_path"/>
         </xsl:call-template>
     </xsl:variable>- name: Create task directory if it does not exist
-  delegate_to: beaker_server
+  delegate_to: localhost
   file:
-    path: "{{ local_repo }}/tasks/<xsl:value-of select="$dirname"/>"
+    path: "/data/tasks/<xsl:value-of select="$dirname"/>"
     state: directory
     mode: '0755'
 <xsl:choose>
     <xsl:when test="$schema = 'git://'">- name: Get Task <xsl:value-of select="fetch/@url"/>
-  delegate_to: beaker_server
+  delegate_to: localhost
   git:
     repo: <xsl:value-of select="$repo_uri"/>
     dest: ./git_repos/<xsl:value-of select="$repo_base_path"/>
@@ -54,17 +54,17 @@
     depth: 1
   run_once: True
 - name: Archive Task
-  delegate_to: beaker_server
+  delegate_to: localhost
   archive:
     path: ./git_repos/<xsl:value-of select="$repo_base_path"/>/
-    dest: "{{ local_repo }}/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/>.tgz"
+    dest: "/data/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/>.tgz"
 
 </xsl:when>
         <xsl:otherwise>- name: Download Task
-  delegate_to: beaker_server
+  delegate_to: localhost
   get_url:
     url: <xsl:value-of select="$repo_uri"/>
-    dest: "{{ local_repo }}/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/>"
+    dest: "/data/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/>"
     mode: 0755
 
 </xsl:otherwise>

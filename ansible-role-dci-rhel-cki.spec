@@ -2,8 +2,8 @@
 %define _binary_payload w0.gzdio
 
 Name:       ansible-role-dci-rhel-cki
-Version:    0.0.1
-Release:    1%{?dist}
+Version:    0.0.2
+Release:    1.VERS%{?dist}
 Summary:    ansible-role-dci-rhel-cki
 License:    ASL 2.0
 URL:        https://github.com/redhat-cip/ansible-role-dci-rhel-cki
@@ -35,5 +35,8 @@ cp -r tasks %{buildroot}%{_datadir}/dci/roles/dci-rhel-cki
 
 
 %changelog
+* Wed Jun 14 2023 Bill Peck <bpeck@redhat.com> - 0.0.2-1
+- Updates to handle changes in dci-rhel-agent
+
 * Wed Nov 27 2019 Bill Peck <bpeck@redhat.com> - 0.0.1-1
 - Initial release

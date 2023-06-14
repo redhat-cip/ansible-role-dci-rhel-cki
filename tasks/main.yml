@@ -1,52 +1,51 @@
 ---
-# Because restraint needs a key (Ansible uses a password)
-- name: Generate /root/.ssh/id_rsa
-  delegate_to: localhost
-  command: ssh-keygen -q -t rsa -f /root/.ssh/id_rsa -C "" -N ""
-  args:
-    creates: /root/.ssh/id_rsa
-- name: Copy /root/.ssh/id_rsa to SUT  # noqa 301
-  delegate_to: localhost
-  command: |
-    /usr/bin/sshpass -p beaker ssh-copy-id -o StrictHostKeyChecking=no \
-                     -o UserKnownHostsFile=/dev/null root@{{ fqdn }}
-- name: Generate temp dir
-  delegate_to: localhost
-  tempfile:
-    state: directory
-    suffix: rstrnt_job
-  register: rstrnt_job
+- name: Run Once
+  run_once: true
+  block:
+    - name: Generate temp dir
+      delegate_to: localhost
+      tempfile:
+        state: directory
+        suffix: rstrnt_job
+      register: rstrnt_job
 
-- name: Mirror cki job local
-  delegate_to: localhost
-  get_url:
-    url: "{{ cki_job_url |
-      default(hostvars.localhost.job_info.job.topic.data.cki_job_url) }}"
-    dest: "{{ rstrnt_job.path }}/cki_job.xml"
-    mode: 0755
+    - name: Mirror cki job local
+      delegate_to: localhost
+      get_url:
+        url: "{{ cki_job_url |
+          default(hostvars.localhost.job_info.job.topic.data.cki_job_url) }}"
+        dest: "{{ rstrnt_job.path }}/cki_job.xml"
+        mode: 0755
 
-- name: Get 'dependency' nodes
-  delegate_to: localhost
-  xml:
-    path: "{{ rstrnt_job.path }}/cki_job.xml"
-    xpath: //dependencies/dependency
-    content: attribute
-  register: dependencies
+    - name: Get 'dependency' nodes
+      delegate_to: localhost
+      xml:
+        path: "{{ rstrnt_job.path }}/cki_job.xml"
+        xpath: //dependencies/dependency
+        content: attribute
+      register: dependencies
 
-- name: Create lookaside dir
-  delegate_to: beaker_server
-  file:
-    path: "{{ local_repo }}/lookaside"
-    state: directory
-    mode: '0755'
+    - name: Create lookaside dir
+      delegate_to: localhost
+      file:
+        path: "/data/lookaside"
+        state: directory
+        mode: '0755'
 
-- name: Mirror Job Dependencies
-  delegate_to: beaker_server
-  get_url:
-    url: "{{ item.dependency.url }}"
-    dest: "{{ local_repo }}/lookaside/"
-    mode: 0755
-  with_items: "{{ dependencies.matches }}"
+    - name: Mirror Job Dependencies
+      delegate_to: localhost
+      get_url:
+        url: "{{ item.dependency.url }}"
+        dest: "/data/lookaside/"
+        mode: 0755
+      with_items: "{{ dependencies.matches }}"
+
+    - name: Generate CKI playbook  # noqa 301
+      delegate_to: localhost
+      shell: |
+        xsltproc {{ role_path }}/files/job2dciplaybook.xsl \
+                 {{ rstrnt_job.path }}//cki_job.xml \
+                 > {{ rstrnt_job.path }}/cki_playbook.yml
 
 - name: Process CKI jobs  # noqa 301
   delegate_to: localhost
@@ -54,25 +53,20 @@
     xsltproc --stringparam jumpHost {{ local_repo_ip }} \
              {{ role_path }}/files/job2restraint.xsl \
              {{ rstrnt_job.path }}/cki_job.xml \
-             > {{ rstrnt_job.path }}/processed_cki_job.xml
-
-- name: Generate CKI playbook  # noqa 301
-  delegate_to: localhost
-  shell: |
-    xsltproc --stringparam sutHost {{ fqdn }} \
-             {{ role_path }}/files/job2dciplaybook.xsl \
-             {{ rstrnt_job.path }}//cki_job.xml \
-             > {{ rstrnt_job.path }}/cki_playbook.yml
+             > {{ rstrnt_job.path }}/{{ inventory_hostname }}_cki_job.xml
 
 - include_tasks: "{{ rstrnt_job.path }}/cki_playbook.yml"
+  args:
+    apply:
+      run_once: True
 
 # Run the test
-- name: Execute restraint processed_cki_job.xml  # noqa 301
+- name: Execute restraint cki_job.xml  # noqa 301
   delegate_to: localhost
   command:
-    restraint --job {{ rstrnt_job.path }}/processed_cki_job.xml --host
-              1=root@{{ fqdn }} -v -e 'ssh -o UserKnownHostsFile=/dev/null
-              -o StrictHostKeyChecking=no'
+    restraint --job {{ rstrnt_job.path }}/{{ inventory_hostname }}_cki_job.xml --host
+           1=root@{{ inventory_hostname }} -v -e 'ssh -F
+           /etc/dci-rhel-agent/secrets/ssh_config_{{ inventory_hostname }}.cfg'
   args:
     chdir: "{{ rstrnt_job.path }}"
 
@@ -80,8 +74,8 @@
   delegate_to: localhost
   shell: |
     xsltproc /usr/share/restraint/client/job2junit.xml \
-             {{ rstrnt_job.path }}//processed_cki_job.01/job.xml \
-             > {{ rstrnt_job.path }}/cki-results.xml
+             {{ rstrnt_job.path }}//{{ inventory_hostname }}_cki_job.01/job.xml \
+             > {{ rstrnt_job.path }}/{{ inventory_hostname }}_cki-results.xml
 
 - name: Upload CKI jUnit results
   delegate_to: localhost
@@ -90,16 +84,16 @@
     - DCI_API_SECRET: "{{ hostvars.localhost.dci_api_secret }}"
     - DCI_CS_URL: "{{ hostvars.localhost.dci_cs_url }}"
   dci_file:
-    path: "{{ rstrnt_job.path  }}/cki-results.xml"
-    name: "cki-results"
+    path: "{{ rstrnt_job.path  }}/{{ inventory_hostname }}_cki-results.xml"
+    name: "{{ inventory_hostname }}_cki-results"
     job_id: "{{ hostvars.localhost.job_id }}"
     mime: "application/junit"
 
 - name: Bundle up CKI logs
   delegate_to: localhost
   archive:
-    path: "{{ rstrnt_job.path }}/processed_cki_job.01"
-    dest: "{{ rstrnt_job.path }}/processed_cki_job.01.tgz"
+    path: "{{ rstrnt_job.path }}/{{ inventory_hostname }}_cki_job.01"
+    dest: "{{ rstrnt_job.path }}/{{ inventory_hostname }}_cki_job.01.tgz"
 
 - name: Upload CKI log tarball
   delegate_to: localhost
@@ -112,7 +106,7 @@
     name: "{{ item | basename }}"
     job_id: "{{ hostvars.localhost.job_id }}"
   with_fileglob:
-    - "{{ rstrnt_job.path }}/processed_cki_job.01.tgz"
+    - "{{ rstrnt_job.path }}/{{ inventory_hostname }}_cki_job.01.tgz"
 
 - name: Clean up Temp dir
   delegate_to: localhost

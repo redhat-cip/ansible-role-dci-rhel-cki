@@ -1,6 +1,7 @@
 ---
 galaxy_info:
-  author: Distributed-CI Team
+  role_name: dci.cki
+  author: Red Hat DCI
   description: An Ansible role to run the Red Hat RHEL cki test suite
   company: Red Hat
   license: license (Apache)
