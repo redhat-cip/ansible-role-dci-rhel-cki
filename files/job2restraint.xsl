@@ -6,7 +6,7 @@
     <xsl:template match="text()"/>
     <xsl:template match="job/recipeSet/recipe[1]"><job><recipeSet><recipe><params><param>
 <xsl:attribute name="name">LOOKASIDE</xsl:attribute>
-<xsl:attribute name="value">http://<xsl:value-of select="$jumpHost"/>/dci/lookaside/</xsl:attribute>
+<xsl:attribute name="value">http://<xsl:value-of select="$jumpHost"/>/lookaside/</xsl:attribute>
 </param></params>
 <xsl:apply-templates/></recipe></recipeSet></job>
 </xsl:template>
@@ -48,7 +48,7 @@
                     </xsl:attribute>
                     <xsl:copy-of select="params" />
                     <fetch>
-			    <xsl:attribute name="url">http://<xsl:value-of select="$jumpHost"/>/dci/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/><xsl:choose><xsl:when test="$schema = 'git://'"><xsl:value-of select="'.tgz'"/></xsl:when></xsl:choose>#<xsl:value-of select="$repo_sub_path"/>
+			    <xsl:attribute name="url">http://<xsl:value-of select="$jumpHost"/>/tasks/<xsl:value-of select="$dirname"/><xsl:value-of select="$basename"/><xsl:choose><xsl:when test="$schema = 'git://'"><xsl:value-of select="'.tgz'"/></xsl:when></xsl:choose>#<xsl:value-of select="$repo_sub_path"/>
                         </xsl:attribute>
                     </fetch>
                 </task>

@@ -2,7 +2,7 @@
 %define _binary_payload w0.gzdio
 
 Name:       ansible-role-dci-rhel-cki
-Version:    0.0.2
+Version:    0.0.3
 Release:    1.VERS%{?dist}
 Summary:    ansible-role-dci-rhel-cki
 License:    ASL 2.0

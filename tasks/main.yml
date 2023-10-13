@@ -50,7 +50,7 @@
 - name: Process CKI jobs  # noqa 301
   delegate_to: localhost
   shell: |
-    xsltproc --stringparam jumpHost {{ local_repo_ip }} \
+    xsltproc --stringparam jumpHost {{ jumpbox }}.{{ domain }} \
              {{ role_path }}/files/job2restraint.xsl \
              {{ rstrnt_job.path }}/cki_job.xml \
              > {{ rstrnt_job.path }}/{{ inventory_hostname }}_cki_job.xml
@@ -58,14 +58,14 @@
 - include_tasks: "{{ rstrnt_job.path }}/cki_playbook.yml"
   args:
     apply:
-      run_once: True
+      run_once: true
 
 # Run the test
 - name: Execute restraint cki_job.xml  # noqa 301
   delegate_to: localhost
   command:
-    restraint --job {{ rstrnt_job.path }}/{{ inventory_hostname }}_cki_job.xml --host
-           1=root@{{ inventory_hostname }} -v -e 'ssh -F
+    restraint --job {{ rstrnt_job.path }}/{{ inventory_hostname }}_cki_job.xml
+           --host 1=root@{{ inventory_hostname }} -v -e 'ssh -F
            /etc/dci-rhel-agent/secrets/ssh_config_{{ inventory_hostname }}.cfg'
   args:
     chdir: "{{ rstrnt_job.path }}"
@@ -74,8 +74,8 @@
   delegate_to: localhost
   shell: |
     xsltproc /usr/share/restraint/client/job2junit.xml \
-             {{ rstrnt_job.path }}//{{ inventory_hostname }}_cki_job.01/job.xml \
-             > {{ rstrnt_job.path }}/{{ inventory_hostname }}_cki-results.xml
+           {{ rstrnt_job.path }}//{{ inventory_hostname }}_cki_job.01/job.xml \
+           > {{ rstrnt_job.path }}/{{ inventory_hostname }}_cki-results.xml
 
 - name: Upload CKI jUnit results
   delegate_to: localhost
